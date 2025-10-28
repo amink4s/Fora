@@ -32,9 +32,9 @@ export async function sendUserNotification(fid: number, message: string, url: st
         return { success: false, message: "MINI_APP_FID is not a valid number." };
     }
     
-    // FIX: Calling the method directly on the client object instead of using .v2.user
-    // This assumes the SDK's internal versioning routes the call correctly.
-    const response = await neynarClient.user.sendNotification({
+    // FIX: Calling the method directly on the client, and using 'sendUserNotifications' (plural)
+    // This is the most direct method call exposed by many Neynar SDK wrappers.
+    const response = await (neynarClient as any).sendUserNotifications({
       target_fid: fid, // Target user FID
       notification_text: message, // Text message
       target_url: url, // Deep-link URL
