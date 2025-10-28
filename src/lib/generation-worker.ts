@@ -1,25 +1,17 @@
-// lib/generation-worker.ts
+// src/lib/generation-worker.ts
 
 import { kv } from '@vercel/kv';
 import { JobStatus, VideoJob } from '~/lib/db';
+import { sendUserNotification } from '~/lib/neynar-api'; // KEEP: Real notification function
 import { put } from '@vercel/blob'; // Vercel Blob SDK
-import { client } from './neynar-api'; // We'll define this Neynar client next
+// REMOVE: import { client } from './neynar-api'; - Error: Module "..." has no exported member 'client'
 
 // --- MOCK CONSTANTS ---
 const DB_PREFIX = 'job:';
 const MOCK_VIDEO_FILE = Buffer.from('mock video content', 'utf8'); // A small mock buffer
 const MOCK_VIDEO_MIME_TYPE = 'video/mp4'; 
 
-// --- MOCK HELPER: Neynar Client (to be fully implemented in Step 4) ---
-// For now, this is a placeholder to prevent errors.
-const mockNeynarClient = {
-    // This mocks the function to send a native push notification
-    sendUserNotification: async (fid: number, message: string, url: string) => {
-        console.log(`[NEYNAR MOCK] Sending notification to FID ${fid}: "${message}" linking to ${url}`);
-        // In Step 4, we will replace this with the real Neynar API call.
-        return { success: true }; 
-    }
-};
+// REMOVE: The entire 'MOCK HELPER: Neynar Client' section and any associated code.
 
 /**
  * Simulates the AI service returning a video file.
@@ -53,7 +45,6 @@ export async function handleGenerationCompletion(jobId: string, taskId: string) 
         // 3. Upload to Vercel Blob (Status: Ready - Private URL)
         console.log('[WORKER] Uploading to Vercel Blob...');
         
-        // We use { access: 'public' } so the URL can be used as a Farcaster embed.
         const blob = await put(`pfp-animation-${jobId}.mp4`, videoBuffer, {
             access: 'public', 
             contentType: MOCK_VIDEO_MIME_TYPE,
@@ -72,13 +63,18 @@ export async function handleGenerationCompletion(jobId: string, taskId: string) 
 
         // 5. User Notification via Neynar
         const notificationMessage = "Your PFP Animation is ready! Tap to view/share.";
-        // The notification links directly to the Account View for the user.
         // NOTE: NEXT_PUBLIC_HOST_URL must be correctly set in .env.local
         const notificationUrl = `${process.env.NEXT_PUBLIC_HOST_URL}/my-videos`; 
         
-        await mockNeynarClient.sendUserNotification(jobData.user_fid, notificationMessage, notificationUrl);
-        
-        console.log(`[WORKER] Notification sent to FID ${jobData.user_fid}.`);
+        // Call the real function: This line is now clean and correct.
+        await sendUserNotification(jobData.user_fid, notificationMessage, notificationUrl);
+
+        console.log(`[WORKER] Notification process initiated for FID ${jobData.user_fid}.`);
+
+        // REMOVE: The duplicated notification logic below to fix the 'redeclare' and 'mockNeynarClient' errors:
+        // const notificationUrl = `${process.env.NEXT_PUBLIC_HOST_URL}/my-videos`; 
+        // await mockNeynarClient.sendUserNotification(jobData.user_fid, notificationMessage, notificationUrl);
+        // console.log(`[WORKER] Notification sent to FID ${jobData.user_fid}.`);
 
     } catch (error) {
         console.error(`[WORKER] Failed to process generation for Job ${jobId}:`, error);
