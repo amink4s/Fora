@@ -79,3 +79,29 @@ However, this does not fully replicate the npx install flow and may not catch al
 
 If you update environment variable handling, remember to replicate any changes in the `dev`, `build`, and `deploy` scripts as needed. The `build` and `deploy` scripts may need further updates and are less critical for most development workflows.
 
+
+## Testing the PFP Generator (local / free flow)
+
+1. Create or confirm your environment variables in `.env.local`:
+
+   - `NEYNAR_API_KEY` and `NEYNAR_CLIENT_ID` (for notifications)
+   - Vercel Blob / KV config if you want uploads to succeed in the cloud
+
+2. Run the dev server:
+
+```bash
+npm run dev
+```
+
+3. Create a test job in Vercel KV (this script writes a PENDING job that the worker will pick up):
+
+```bash
+node scripts/create_test_job.mjs 477126
+```
+
+4. The worker will detect the PENDING job, generate a short MP4 using FFmpeg (or fall back to `public/mock-video.mp4`), upload it to Vercel Blob, and send a Neynar notification to FID 477126 (if credentials are configured).
+
+Notes:
+- The generator uses FFmpeg. If FFmpeg is not available in your environment the code will fall back to `public/mock-video.mp4`.
+- To test webhook flows (capturing final Farcaster CDN URL after sharing) you'll need a publicly reachable endpoint (use `ngrok`/`localtunnel`) and configure Neynar to call it.
+
