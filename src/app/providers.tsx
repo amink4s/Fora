@@ -24,7 +24,6 @@ export function Providers({
       <MiniAppProvider
         analyticsEnabled={ANALYTICS_ENABLED}
         backButtonEnabled={true}
-        returnUrl={RETURN_URL}
       >
         <SafeFarcasterSolanaProvider endpoint={solanaEndpoint}>
           {children}

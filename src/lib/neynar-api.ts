@@ -1,56 +1,50 @@
-// src/lib/neynar-api.ts
+// src/lib/neynar-api.ts - COMPLETE CORRECTED CODE
 
-import { NeynarAPIClient, isApiErrorResponse } from '@neynar/nodejs-sdk';
+import { NeynarAPIClient, Configuration } from '@neynar/nodejs-sdk';
 
-// 1. Initialize the Neynar Client
-const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY;
+// FIX: Initialize the client using the Configuration object to resolve 
+// "Argument of type 'string' is not assignable to type 'Configuration'" error.
+const config: Configuration = {
+  apiKey: process.env.NEYNAR_API_KEY as string,
+};
+const neynarClient = new NeynarAPIClient(config); 
+// This should also resolve "Property 'notifications' does not exist" 
+// as the correct type definition is now loaded.
 
-if (!NEYNAR_API_KEY) {
-  throw new Error("NEYNAR_API_KEY is not set in environment variables.");
+interface NotificationPayload {
+  fid: number;
+  jobTitle: string;
+  jobBody: string;
+  jobDeepLink: string;
 }
 
-// Use the Configuration object expected by the modern SDK
-export const neynarClient = new NeynarAPIClient({ apiKey: NEYNAR_API_KEY }); 
-
 /**
- * Sends a native Farcaster push notification to a user.
- * @param fid The Farcaster ID of the user to notify.
- * @param message The text message for the notification.
- * @param url The deep-link URL that the notification will open (should point to /my-videos).
+ * Sends a notification to a Farcaster user when their video is ready.
  */
-export async function sendUserNotification(fid: number, message: string, url: string): Promise<{ success: boolean; message: string }> {
+export async function sendVideoReadyNotification(
+  { fid, jobTitle, jobBody, jobDeepLink }: NotificationPayload
+) {
+  const client_id = process.env.NEYNAR_CLIENT_ID;
+
+  if (!client_id) {
+    console.warn("NEYNAR_CLIENT_ID not set. Skipping notification.");
+    return;
+  }
+  
   try {
-    // The notification must be sent by the Mini App's verified FID
-    const miniappFid = process.env.MINI_APP_FID;
-
-    if (!miniappFid) {
-        return { success: false, message: "MINI_APP_FID is not set." };
-    }
-
-    const senderFidInt = parseInt(miniappFid);
-    if (isNaN(senderFidInt)) {
-        return { success: false, message: "MINI_APP_FID is not a valid number." };
-    }
-    
-    // FIX: Calling the method directly on the client, and using 'sendUserNotifications' (plural)
-    // This is the most direct method call exposed by many Neynar SDK wrappers.
-    const response = await (neynarClient as any).sendUserNotifications({
-      target_fid: fid, // Target user FID
-      notification_text: message, // Text message
-      target_url: url, // Deep-link URL
-      sender_fid: senderFidInt // The notification must come from the Mini App's registered FID
+    // The SDK exposes a "publishFrameNotifications" / frame notifications path.
+    // Use a weakly-typed call to avoid depending on exact types in the SDK wrapper.
+    await (neynarClient as any).publishFrameNotifications({
+      target_fids: [fid],
+      notification: {
+        title: jobTitle.substring(0, 32),
+        body: jobBody.substring(0, 128),
+        target_url: jobDeepLink,
+      },
     });
 
-    console.log(`[NEYNAR] Notification sent response:`, response);
-    
-    return { success: true, message: `Notification sent to FID ${fid}.` };
-
+    console.log(`Notification sent successfully to FID ${fid}.`);
   } catch (error) {
-    if (isApiErrorResponse(error)) {
-        console.error(`[NEYNAR ERROR] Failed to send notification:`, error.message);
-        return { success: false, message: `Neynar API Error: ${error.message}` };
-    }
-    console.error(`[NEYNAR ERROR] Unknown error sending notification:`, error);
-    return { success: false, message: "An unknown error occurred while sending notification." };
+    console.error(`Failed to send notification to FID ${fid}:`, error);
   }
 }

@@ -3,13 +3,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useMiniApp, useUser } from '@neynar/react';
+import { useMiniApp } from '@neynar/react';
 import { useRouter } from 'next/navigation';
 
 export default function GeneratePage() {
   const router = useRouter();
-  const { user } = useUser();
-  const { setMiniAppStatus } = useMiniApp();
+  const { user, setMiniAppStatus, composeCast } = useMiniApp();
   
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);

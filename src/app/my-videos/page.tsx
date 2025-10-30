@@ -3,23 +3,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useUser, useMiniApp } from '@neynar/react';
+import { useMiniApp } from '@neynar/react';
 import { VideoJob, JobStatus } from '~/lib/db';
 
 type GroupedJobs = Record<JobStatus, VideoJob[]>;
 
 const StatusDisplay: Record<JobStatus, string> = {
   PENDING: 'In Progress ⏳',
+  PROCESSING: 'Processing... ⏳',
   READY: 'Completed & Ready to Share ✅',
   COMPLETED_PUBLIC: 'Shared to Farcaster 📢',
   ARCHIVED: 'Archived (Saved to Farcaster CDN) 🗑️',
+  SHARED: 'Shared ✅',
   FAILED: 'Generation Failed ❌',
 };
 
 export default function MyVideosPage() {
-  const { user } = useUser();
-  const { composeCast, setMiniAppStatus } = useMiniApp();
-  const [jobs, setJobs] = useState<GroupedJobs>({});
+  const { user, setMiniAppStatus, composeCast } = useMiniApp();
+  const [jobs, setJobs] = useState<GroupedJobs>({} as GroupedJobs);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -167,7 +168,7 @@ export default function MyVideosPage() {
         {jobs.READY && jobs.READY.length > 0 && (
           <section>
             <h2 className="text-xl font-semibold mb-3 border-b pb-1 text-green-700">Ready to Share (Storage Offload Needed)</h2>
-            {jobs.READY.map(job => <JobCard key={job.id} job={job} />)}
+            {jobs.READY?.map((job: VideoJob) => <JobCard key={job.id} job={job} />)}
           </section>
         )}
         
@@ -175,7 +176,7 @@ export default function MyVideosPage() {
         {jobs.PENDING && jobs.PENDING.length > 0 && (
           <section>
             <h2 className="text-xl font-semibold mb-3 border-b pb-1 text-yellow-700">In Progress</h2>
-            {jobs.PENDING.map(job => <JobCard key={job.id} job={job} />)}
+            {jobs.PENDING?.map((job: VideoJob) => <JobCard key={job.id} job={job} />)}
           </section>
         )}
 
@@ -183,8 +184,8 @@ export default function MyVideosPage() {
         {(jobs.COMPLETED_PUBLIC || jobs.ARCHIVED) && (jobs.COMPLETED_PUBLIC?.length || jobs.ARCHIVED?.length) > 0 && (
           <section>
             <h2 className="text-xl font-semibold mb-3 border-b pb-1 text-blue-700">Completed & Shared/Archived</h2>
-            {jobs.COMPLETED_PUBLIC?.map(job => <JobCard key={job.id} job={job} />)}
-            {jobs.ARCHIVED?.map(job => <JobCard key={job.id} job={job} />)}
+            {jobs.COMPLETED_PUBLIC?.map((job: VideoJob) => <JobCard key={job.id} job={job} />)}
+            {jobs.ARCHIVED?.map((job: VideoJob) => <JobCard key={job.id} job={job} />)}
           </section>
         )}
       </div>

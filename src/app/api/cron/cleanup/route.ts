@@ -37,15 +37,17 @@ export async function GET(req: NextRequest) {
     // NOTE: Vercel Blob SDK (list) can provide actual usage metrics if needed,
     // but the time-based rule is the most reliable way to enforce the 48-hour limit.
     
-    const jobsToDelete = jobs.filter(job => {
-        if (!job || job.status === 'ARCHIVED' || !job.ready_at) return false;
-        
-        const readyDate = new Date(job.ready_at);
-        const ageMs = Date.now() - readyDate.getTime();
-        
-        // Trigger A: Video is older than 48 hours AND still on the Blob store
-        return ageMs > ARCHIVE_AGE_MS && job.vercel_blob_url !== null;
-    });
+  const jobsToDelete = jobs.filter((job): job is VideoJob => {
+    if (!job) return false;
+    if (job.status === 'ARCHIVED') return false;
+    if (!job.ready_at) return false;
+
+    const readyDate = new Date(job.ready_at);
+    const ageMs = Date.now() - readyDate.getTime();
+
+    // Trigger A: Video is older than 48 hours AND still on the Blob store
+    return ageMs > ARCHIVE_AGE_MS && !!job.vercel_blob_url;
+  });
 
     console.log(`[CLEANUP] Found ${jobsToDelete.length} jobs ready for archival based on 48h rule.`);
 
