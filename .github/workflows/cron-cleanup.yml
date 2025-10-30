@@ -1,0 +1,28 @@
+name: Hourly Cleanup Cron
+
+on:
+  schedule:
+    # Run at minute 0 of every hour
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call cleanup endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_JOB_SECRET }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: |
+          if [ -z "$SITE_URL" ]; then
+            echo "Please set SITE_URL as a repository secret (https://your-site.vercel.app)";
+            exit 1;
+          fi
+          if [ -z "$CRON_SECRET" ]; then
+            echo "Please set CRON_JOB_SECRET repository secret.";
+            exit 1;
+          fi
+          echo "Calling $SITE_URL/api/cron/cleanup"
+          curl -s -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/cron/cleanup" -o /tmp/cron-cleanup.log || true
+          echo "Response:" && cat /tmp/cron-cleanup.log
