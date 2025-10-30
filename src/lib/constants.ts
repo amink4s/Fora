@@ -73,7 +73,11 @@ export const APP_SPLASH_BACKGROUND_COLOR: string = '#f7f7f7';
  * If not provided, the mini app will be unsigned and have limited capabilities.
  */
 export const APP_ACCOUNT_ASSOCIATION: AccountAssociation | undefined =
-  undefined;
+  {
+    header: "eyJmaWQiOjQ3NzEyNiwidHlwZSI6ImF1dGgiLCJrZXkiOiIweDY1ZTM0MTlFNjMzODMzRGYxRDYwMmU3OTA1Q2I5QzdlNTQxZjA4NDkifQ",
+    payload: "eyJkb21haW4iOiJmb3JhLTY5LnZlcmNlbC5hcHAifQ",
+    signature: "KgfiaxFjHECxlI/nBmAsJEuNusH/6/EVqPQnM8WNgd1+qG+gsZkLvp6rG21bEROErTMpnMa3wa0KBKtHwXUsNhw=",
+  };
 
 // --- UI Configuration ---
 /**
