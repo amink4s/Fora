@@ -92,18 +92,17 @@ export default function GeneratePage() {
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={async () => {
-                  // Try to navigate back in-app; fall back to Next router push to '/'
+                try {
+                  router.back();
+                } catch (e) {
                   try {
-                    router.back();
-                  } catch (e) {
-                    try {
-                      await router.push('/');
-                    } catch (err) {
-                      // ignore
-                    }
+                    await router.push('/');
+                  } catch (err) {
+                    // ignore
                   }
-                }}
-              className="px-3 py-1 rounded bg-gray-200 text-sm"
+                }
+              }}
+              className="btn btn-outline"
             >
               ← Back to feed
             </button>
@@ -124,7 +123,7 @@ export default function GeneratePage() {
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="e.g., A pixel art cat wearing a crown, glitching with neon colors."
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+              className="mt-1 input"
               disabled={isLoading}
             />
           </div>
@@ -139,7 +138,7 @@ export default function GeneratePage() {
               accept="image/*"
               onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
               disabled={isLoading}
-              className="mt-1 block w-full text-sm text-gray-500"
+              className="mt-1 input"
             />
           </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { APP_NAME } from "~/lib/constants";
 import sdk from "@farcaster/miniapp-sdk";
 import { useMiniApp } from "@neynar/react";
@@ -18,6 +18,36 @@ export function Header({ neynarUser }: HeaderProps) {
   const { signIn, status, authenticatedUser } = useQuickAuth();
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
+  const [profilePfp, setProfilePfp] = useState<string | null>(null);
+
+  // If SDK context/user doesn't include a pfp URL, fetch it from our server
+  // as a fallback (calls /api/users which proxies Neynar). This handles
+  // cases where the frame provides only a fid but no profile image URL.
+  useEffect(() => {
+    const fid = context?.user?.fid ?? user?.fid;
+    const hasPfp = context?.user?.pfpUrl ?? user?.pfpUrl;
+    if (!fid || hasPfp) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/users?fids=${fid}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const fetched = json?.users?.[0];
+        if (!cancelled && fetched) {
+          // Neynar returns pfp_url in snake_case on some endpoints
+          setProfilePfp(fetched.pfp_url || fetched.pfpUrl || null);
+        }
+      } catch (err) {
+        // ignore
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [context?.user?.fid, user?.fid, context?.user?.pfpUrl, user?.pfpUrl]);
 
   return (
     <div className="relative">
@@ -44,8 +74,9 @@ export function Header({ neynarUser }: HeaderProps) {
           >
             <img
               src={
-                // Prefer the SDK context user pfp, then the simple user object, then placeholder
-                context?.user?.pfpUrl ?? user?.pfpUrl ?? '/placeholder.png'
+                // Prefer the SDK context user pfp, then the simple user object,
+                // then the profilePfp fetched from /api/users, then placeholder
+                context?.user?.pfpUrl ?? user?.pfpUrl ?? profilePfp ?? '/placeholder.png'
               }
               alt="Profile"
               className="w-12 h-12 rounded-full border-2 border-primary object-cover bg-gray-200"
