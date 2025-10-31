@@ -91,8 +91,17 @@ export async function GET(req: NextRequest) {
     
     console.log(`--- CRON JOB: Cleanup Finished. ${deletedCount} assets archived. ---`);
     return NextResponse.json({ success: true, message: `Cleanup complete. ${deletedCount} assets archived.` });
-  } catch (error) {
+  } catch (error: any) {
     console.error('CRON JOB FAILED:', error);
-    return NextResponse.json({ success: false, message: 'Cron Job execution failed.' }, { status: 500 });
+    // Return error details to aid debugging (temporary; remove in production)
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Cron Job execution failed.',
+        error: error?.message || String(error),
+        stack: error?.stack || null,
+      },
+      { status: 500 }
+    );
   }
 }
