@@ -14,7 +14,7 @@ type HeaderProps = {
 };
 
 export function Header({ neynarUser }: HeaderProps) {
-  const { context } = useMiniApp();
+  const { context, user } = useMiniApp();
   const { signIn, status, authenticatedUser } = useQuickAuth();
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
@@ -32,10 +32,17 @@ export function Header({ neynarUser }: HeaderProps) {
           <div
             className="cursor-pointer flex items-center"
             onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-            title={context?.user ? `FID ${context.user.fid}` : 'Not connected'}
+            title={
+              (context?.user?.fid ?? user?.fid)
+                ? `FID ${context?.user?.fid ?? user?.fid}`
+                : 'Not connected'
+            }
           >
             <img
-              src={context?.user?.pfpUrl ?? '/placeholder.png'}
+              src={
+                // Prefer the SDK context user pfp, then the simple user object, then placeholder
+                context?.user?.pfpUrl ?? user?.pfpUrl ?? '/placeholder.png'
+              }
               alt="Profile"
               className="w-10 h-10 rounded-full border-2 border-primary object-cover bg-gray-200"
             />

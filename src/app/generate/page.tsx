@@ -8,14 +8,16 @@ import { useRouter } from 'next/navigation';
 
 export default function GeneratePage() {
   const router = useRouter();
-  const { user, setMiniAppStatus, composeCast } = useMiniApp();
+  const { user, context, setMiniAppStatus, composeCast } = useMiniApp();
   
   const [prompt, setPrompt] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fid = user?.fid;
+  // Support both return shapes from useMiniApp: some SDK versions expose `user`
+  // at the top level, others provide `context.user`. Use whichever is present.
+  const fid = user?.fid ?? context?.user?.fid;
   const price = '3 USDC';
 
   const handleSubmit = async (e: React.FormEvent) => {
