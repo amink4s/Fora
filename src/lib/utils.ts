@@ -55,9 +55,31 @@ export async function getFarcasterDomainManifest(): Promise<Manifest> {
     version: '1',
     name: APP_NAME ?? 'Neynar Starter Kit',
     homeUrl: `${baseHost}`,
-    iconUrl: `${baseHost}/icon.png`,
-    imageUrl: `${baseHost}/api/opengraph-image`,
-    heroImageUrl: `${baseHost}/her.png`,
+    // Normalize URLs: prefer the constants but replace localhost host with the production baseHost
+    iconUrl: (function (u: string) {
+      try {
+        const parsed = new URL(u);
+        return /localhost|127\.0\.0\.1/.test(parsed.hostname) ? baseHost + parsed.pathname : u;
+      } catch {
+        return u;
+      }
+    })(APP_ICON_URL),
+    imageUrl: (function (u: string) {
+      try {
+        const parsed = new URL(u);
+        return /localhost|127\.0\.0\.1/.test(parsed.hostname) ? baseHost + parsed.pathname : u;
+      } catch {
+        return u;
+      }
+    })(APP_OG_IMAGE_URL),
+    heroImageUrl: (function (u: string) {
+      try {
+        const parsed = new URL(u);
+        return /localhost|127\.0\.0\.1/.test(parsed.hostname) ? baseHost + parsed.pathname : u;
+      } catch {
+        return u;
+      }
+    })(APP_HERO_URL),
     buttonTitle: APP_BUTTON_TEXT ?? 'Launch Mini App',
     splashImageUrl: `${baseHost}/splash.png`,
     splashBackgroundColor: APP_SPLASH_BACKGROUND_COLOR,
