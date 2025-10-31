@@ -15,8 +15,9 @@ type HeaderProps = {
 
 export function Header({ neynarUser }: HeaderProps) {
   const { context } = useMiniApp();
-  const { signIn, status } = useQuickAuth();
+  const { signIn, status, authenticatedUser } = useQuickAuth();
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
 
   return (
     <div className="relative">
@@ -57,7 +58,7 @@ export function Header({ neynarUser }: HeaderProps) {
           )}
         </div>
       </div>
-      {context?.user && (
+  {context?.user && (
         <>      
           {isUserDropdownOpen && (
             <div className="absolute top-full right-0 z-50 w-fit mt-1 mx-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
@@ -82,6 +83,32 @@ export function Header({ neynarUser }: HeaderProps) {
                       </p>
                     </>
                   )}
+                {/* Debug overlay toggle */}
+                <div className="absolute left-4 bottom-4">
+                  <button
+                    onClick={() => setShowDebug(s => !s)}
+                    className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700"
+                  >
+                    {showDebug ? 'Hide debug' : 'Show debug'}
+                  </button>
+                </div>
+
+                {showDebug && (
+                  <div className="fixed left-4 bottom-12 z-50 w-96 max-h-96 overflow-auto p-3 bg-white dark:bg-gray-900 border rounded shadow-lg text-xs font-mono">
+                    <div className="flex justify-between items-center mb-2">
+                      <strong>Debug</strong>
+                      <div className="space-x-2">
+                        <button onClick={() => window.location.reload()} className="px-2 py-1 bg-indigo-600 text-white rounded text-xs">Reload</button>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="mb-2 text-[11px] text-gray-500">useMiniApp context:</div>
+                      <pre className="whitespace-pre-wrap">{JSON.stringify(context, null, 2)}</pre>
+                      <div className="mt-2 text-[11px] text-gray-500">QuickAuth status & user:</div>
+                      <pre className="whitespace-pre-wrap">{JSON.stringify({ status, authenticatedUser }, null, 2)}</pre>
+                    </div>
+                  </div>
+                )}
                 </div>
               </div>
             </div>
