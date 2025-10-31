@@ -1,0 +1,27 @@
+name: Hourly Job Processor
+
+on:
+  schedule:
+    - cron: '0 * * * *' # every hour
+  workflow_dispatch: {}
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call process-pending endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_JOB_SECRET }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: |
+          if [ -z "$SITE_URL" ]; then
+            echo "Please set SITE_URL as a repository secret (https://your-site.vercel.app)";
+            exit 1;
+          fi
+          if [ -z "$CRON_SECRET" ]; then
+            echo "Please set CRON_JOB_SECRET repository secret.";
+            exit 1;
+          fi
+          echo "Calling $SITE_URL/api/process-pending"
+          curl -s -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/process-pending" -o /tmp/process-pending.log || true
+          echo "Response:" && cat /tmp/process-pending.log
