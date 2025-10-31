@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMiniApp } from "@neynar/react";
 import { useQuickAuth } from "~/hooks/useQuickAuth";
 import { Header } from "~/components/ui/Header";
@@ -63,6 +63,30 @@ export default function App(
     composeCast,
     user,
   } = useMiniApp() as any;
+  const [floatingPfp, setFloatingPfp] = useState<string | null>(null);
+
+  // If the SDK context/user doesn't include a pfp URL, attempt to fetch it
+  // from our /api/users endpoint so the floating avatar displays.
+  useEffect(() => {
+    const fid = context?.user?.fid ?? user?.fid;
+    const hasPfp = context?.user?.pfpUrl ?? user?.pfpUrl;
+    if (!fid || hasPfp) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/users?fids=${fid}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const fetched = json?.users?.[0];
+        if (!cancelled && fetched) {
+          setFloatingPfp(fetched.pfp_url || fetched.pfpUrl || null);
+        }
+      } catch (err) {
+        // ignore
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [context?.user?.fid, user?.fid, context?.user?.pfpUrl, user?.pfpUrl]);
 
   // --- Neynar user hook ---
   const { user: neynarUser } = useNeynarUser(context || undefined);
@@ -121,6 +145,39 @@ export default function App(
     >
   {/* Header should be full width */}
       <Header neynarUser={neynarUser} />
+
+      {/* Floating avatar (top-right) as a fallback/always-visible element */}
+      {isSDKLoaded && (
+        <div className="fixed top-4 right-4 z-[9999]">
+          <button
+            onClick={async () => {
+              try {
+                // Try to open profile or trigger signIn if not connected
+                if (context?.user?.fid || user?.fid) {
+                  await (window as any).sdk?.actions?.viewProfile?.({ fid: context?.user?.fid ?? user?.fid });
+                } else {
+                  // trigger signIn via QuickAuth action
+                  try {
+                    await (window as any).sdk?.actions?.signIn?.({} as any);
+                  } catch (e) {
+                    // ignore
+                  }
+                }
+              } catch (err) {
+                // ignore errors
+              }
+            }}
+            className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary bg-gray-100"
+            aria-label="Profile"
+          >
+            <img
+              src={context?.user?.pfpUrl ?? user?.pfpUrl ?? floatingPfp ?? '/placeholder.png'}
+              alt="pfp"
+              className="w-full h-full object-cover"
+            />
+          </button>
+        </div>
+      )}
 
       {/* Main content and footer should be centered */}
       <div className="container py-2 pb-20">
