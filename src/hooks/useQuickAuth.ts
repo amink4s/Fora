@@ -144,8 +144,44 @@ export function useQuickAuth(): UseQuickAuthReturn {
     try {
       setStatus('loading');
 
-      // Get QuickAuth session token
-      const { token } = await sdk.quickAuth.getToken();
+      // Try to get a QuickAuth session token. If the QuickAuth helper fails
+      // (for example user previously declined a prompt or the frame blocked it),
+      // fallback to invoking the Farcaster SignIn action which triggers the
+      // client's sign-in flow.
+      let token: string | undefined | null = null;
+      try {
+        const result = await sdk.quickAuth.getToken();
+        token = result?.token;
+      } catch (err) {
+        console.warn('quickAuth.getToken failed, attempting fallback signIn action:', err);
+        try {
+          // Ask our backend for a QuickAuth nonce, then invoke the Farcaster
+          // sign-in action with that nonce so the client can present a
+          // proper SIWF/QuickAuth flow.
+          try {
+            const resp = await fetch('/api/auth/nonce');
+            const json = await resp.json();
+            const nonce = json?.nonce || json?.challenge || json?.data?.nonce;
+            if (nonce) {
+              await sdk.actions.signIn({ nonce });
+            } else {
+              // Fallback to calling signIn without a nonce if the endpoint
+              // doesn't return one; the SDK may still prompt the user.
+              await sdk.actions.signIn({} as any);
+            }
+          } catch (fetchErr) {
+            console.warn('Failed to fetch nonce for signIn fallback:', fetchErr);
+            // Still try to invoke signIn so the client may prompt the user.
+            await sdk.actions.signIn({} as any);
+          }
+          // Try to get the token again after the user completes sign-in
+          const retry = await sdk.quickAuth.getToken();
+          token = retry?.token;
+        } catch (err2) {
+          console.warn('Fallback signIn action failed:', err2);
+          token = null;
+        }
+      }
 
       if (token) {
         // Validate the token with our server-side API
