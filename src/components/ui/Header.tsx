@@ -4,6 +4,7 @@ import { useState } from "react";
 import { APP_NAME } from "~/lib/constants";
 import sdk from "@farcaster/miniapp-sdk";
 import { useMiniApp } from "@neynar/react";
+import { useQuickAuth } from "~/hooks/useQuickAuth";
 
 type HeaderProps = {
   neynarUser?: {
@@ -14,6 +15,7 @@ type HeaderProps = {
 
 export function Header({ neynarUser }: HeaderProps) {
   const { context } = useMiniApp();
+  const { signIn, status } = useQuickAuth();
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
   return (
@@ -24,7 +26,7 @@ export function Header({ neynarUser }: HeaderProps) {
         <div className="text-lg font-light">
           Welcome to {APP_NAME}!
         </div>
-        {context?.user && (
+        {context?.user ? (
           <div 
             className="cursor-pointer"
             onClick={() => {
@@ -38,6 +40,22 @@ export function Header({ neynarUser }: HeaderProps) {
                 className="w-10 h-10 rounded-full border-2 border-primary"
               />
             )}
+          </div>
+        ) : (
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={async () => {
+                try {
+                  await signIn();
+                } catch (e) {
+                  console.warn('QuickAuth signIn failed', e);
+                }
+              }}
+              className="px-3 py-1 rounded bg-indigo-600 text-white text-sm"
+              disabled={status === 'authenticated'}
+            >
+              {status === 'authenticated' ? 'Connected' : 'Connect Farcaster'}
+            </button>
           </div>
         )}
       </div>
