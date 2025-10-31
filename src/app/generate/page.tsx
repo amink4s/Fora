@@ -11,6 +11,7 @@ export default function GeneratePage() {
   const { user, setMiniAppStatus, composeCast } = useMiniApp();
   
   const [prompt, setPrompt] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,13 +40,24 @@ export default function GeneratePage() {
       await new Promise(resolve => setTimeout(resolve, 500)); // Simulate payment latency
       console.log(`[FRONTEND MOCK] Payment successful!`);
       
-      // 2. Call the backend API route (Step 2)
+      // 2. If an image file was provided, upload it first to get a public URL
+      let image_url: string | undefined = undefined;
+      if (file) {
+        const fd = new FormData();
+        fd.append('file', file);
+        const up = await fetch('/api/upload', { method: 'POST', body: fd });
+        const upjson = await up.json();
+        if (!up.ok) throw new Error(upjson.error || 'Image upload failed');
+        image_url = upjson.url;
+      }
+
+      // 3. Call the backend API route to create the generation job
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ fid, prompt }),
+        body: JSON.stringify({ user: { fid: Number(fid) }, prompt, image_url }),
       });
 
       const data = await response.json();
@@ -91,6 +103,20 @@ export default function GeneratePage() {
               required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
               disabled={isLoading}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="image" className="block text-sm font-medium text-gray-700">
+              Upload a source image (optional):
+            </label>
+            <input
+              id="image"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+              disabled={isLoading}
+              className="mt-1 block w-full text-sm text-gray-500"
             />
           </div>
 
