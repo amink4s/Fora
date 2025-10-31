@@ -24,14 +24,20 @@ export const kv = {
     // Upstash returns raw strings or null
     return results.map((r: any) => {
       if (r == null) return null;
-      try { return JSON.parse(r) as T; } catch { return r as T; }
+      if (typeof r === 'string') {
+        try { return JSON.parse(r) as T; } catch { return r as T; }
+      }
+      return r as T;
     }) as (T | null)[];
   },
 
   async get<T = any>(key: string) {
     const res = await redis.get(key);
     if (res == null) return null;
-    try { return JSON.parse(res) as T; } catch { return res as T; }
+    if (typeof res === 'string') {
+      try { return JSON.parse(res) as T; } catch { return res as T; }
+    }
+    return res as T;
   },
 
   async set(key: string, value: any) {
