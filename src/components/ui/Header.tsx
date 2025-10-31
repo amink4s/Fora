@@ -20,29 +20,27 @@ export function Header({ neynarUser }: HeaderProps) {
 
   return (
     <div className="relative">
-      <div 
+      <div
         className="mt-4 mb-4 mx-4 px-2 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-between border-[3px] border-double border-primary"
       >
-        <div className="text-lg font-light">
-          Welcome to {APP_NAME}!
-        </div>
-        {context?.user ? (
-          <div 
-            className="cursor-pointer"
-            onClick={() => {
-              setIsUserDropdownOpen(!isUserDropdownOpen);
-            }}
+        <div className="text-lg font-light">Welcome to {APP_NAME}!</div>
+
+        {/* Avatar slot: show user pfp when available, otherwise show placeholder.
+            When not authenticated show a small Connect button next to the avatar. */}
+        <div className="flex items-center space-x-3">
+          <div
+            className="cursor-pointer flex items-center"
+            onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+            title={context?.user ? `FID ${context.user.fid}` : 'Not connected'}
           >
-            {context.user.pfpUrl && (
-              <img 
-                src={context.user.pfpUrl} 
-                alt="Profile" 
-                className="w-10 h-10 rounded-full border-2 border-primary"
-              />
-            )}
+            <img
+              src={context?.user?.pfpUrl ?? '/placeholder.png'}
+              alt="Profile"
+              className="w-10 h-10 rounded-full border-2 border-primary object-cover bg-gray-200"
+            />
           </div>
-        ) : (
-          <div className="flex items-center space-x-2">
+
+          {!context?.user && (
             <button
               onClick={async () => {
                 try {
@@ -54,10 +52,10 @@ export function Header({ neynarUser }: HeaderProps) {
               className="px-3 py-1 rounded bg-indigo-600 text-white text-sm"
               disabled={status === 'authenticated'}
             >
-              {status === 'authenticated' ? 'Connected' : 'Connect Farcaster'}
+              {status === 'authenticated' ? 'Connected' : 'Connect'}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       {context?.user && (
         <>      

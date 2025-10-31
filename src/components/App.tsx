@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useMiniApp } from "@neynar/react";
+import { useQuickAuth } from "~/hooks/useQuickAuth";
 import { Header } from "~/components/ui/Header";
 import { Footer } from "~/components/ui/Footer";
 import { HomeTab, ActionsTab, ContextTab, WalletTab } from "~/components/ui/tabs";
@@ -63,6 +64,22 @@ export default function App(
 
   // --- Neynar user hook ---
   const { user: neynarUser } = useNeynarUser(context || undefined);
+
+  // QuickAuth auto-signin: attempt sign-in once when the SDK loads and no
+  // Farcaster user context is present. We guard with a ref to avoid repeated
+  // prompts.
+  const { signIn, status } = useQuickAuth();
+  const attemptedAutoSignIn = useRef(false);
+
+  useEffect(() => {
+    if (isSDKLoaded && !context?.user && status !== 'authenticated' && !attemptedAutoSignIn.current) {
+      attemptedAutoSignIn.current = true;
+      // Fire-and-forget signIn; it will show QuickAuth UI inside the frame.
+      signIn().catch((err) => {
+        console.warn('Auto QuickAuth signIn failed:', err);
+      });
+    }
+  }, [isSDKLoaded, context?.user, signIn, status]);
 
   // --- Effects ---
   /**
