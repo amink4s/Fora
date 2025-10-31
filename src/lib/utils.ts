@@ -87,7 +87,28 @@ export async function getFarcasterDomainManifest(): Promise<Manifest> {
         return u;
       }
     })(APP_HERO_URL),
-    buttonTitle: APP_BUTTON_TEXT ?? 'Launch Mini App',
+    // Provide a full button object so Farcaster can recognize this as a mini app
+    button: {
+      title: APP_BUTTON_TEXT ?? 'Launch Mini App',
+      action: {
+        type: 'launch_frame',
+        name: APP_NAME,
+        url: baseHost,
+        splashImageUrl: `${baseHost}/splash.png`,
+        iconUrl: (function (u: string) {
+          try {
+            const parsed = new URL(u);
+            return /localhost|127\.0\.0\.1/.test(parsed.hostname) ? baseHost + parsed.pathname : u;
+          } catch {
+            return u;
+          }
+        })(APP_ICON_URL),
+        splashBackgroundColor: APP_SPLASH_BACKGROUND_COLOR,
+        description: APP_DESCRIPTION,
+        primaryCategory: APP_PRIMARY_CATEGORY,
+        tags: APP_TAGS,
+      },
+    },
     splashImageUrl: `${baseHost}/splash.png`,
     splashBackgroundColor: APP_SPLASH_BACKGROUND_COLOR,
     webhookUrl: APP_WEBHOOK_URL,
