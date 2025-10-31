@@ -24,10 +24,15 @@ export function cn(...inputs: ClassValue[]) {
 export function getMiniAppEmbedMetadata(ogImageUrl?: string) {
   return {
     version: 'next',
-    imageUrl: ogImageUrl ?? APP_OG_IMAGE_URL,
+    imageUrl: ogImageUrl ?? APP_HERO_URL,
     ogTitle: APP_NAME,
     ogDescription: APP_DESCRIPTION,
-    ogImageUrl: ogImageUrl ?? APP_OG_IMAGE_URL,
+    ogImageUrl: ogImageUrl ?? APP_HERO_URL,
+    // Additional metadata fields requested
+    tagline: APP_DESCRIPTION,
+    description: APP_DESCRIPTION,
+    subtitle: APP_DESCRIPTION,
+    tags: APP_TAGS,
     button: {
       title: APP_BUTTON_TEXT,
       action: {
@@ -36,6 +41,7 @@ export function getMiniAppEmbedMetadata(ogImageUrl?: string) {
         url: APP_URL,
         splashImageUrl: APP_SPLASH_URL,
         iconUrl: APP_ICON_URL,
+        // ensure splash background color is the requested black
         splashBackgroundColor: APP_SPLASH_BACKGROUND_COLOR,
         description: APP_DESCRIPTION,
         primaryCategory: APP_PRIMARY_CATEGORY,
@@ -64,6 +70,7 @@ export async function getFarcasterDomainManifest(): Promise<Manifest> {
         return u;
       }
     })(APP_ICON_URL),
+    // Use the hero image as the primary manifest image for Farcaster
     imageUrl: (function (u: string) {
       try {
         const parsed = new URL(u);
@@ -71,7 +78,7 @@ export async function getFarcasterDomainManifest(): Promise<Manifest> {
       } catch {
         return u;
       }
-    })(APP_OG_IMAGE_URL),
+    })(APP_HERO_URL),
     heroImageUrl: (function (u: string) {
       try {
         const parsed = new URL(u);

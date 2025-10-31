@@ -48,7 +48,7 @@ export const APP_PRIMARY_CATEGORY: string = 'social';
  * Tags associated with the mini app.
  * Used for search and discovery in app stores.
  */
-export const APP_TAGS: string[] = ['sora', 'ai', 'pfp', 'animation', 'generation', 'animator', 'fora'];
+export const APP_TAGS: string[] = ['sora', 'image generation', 'ai image to video'];
 
 // --- Asset URLs ---
 /**
@@ -79,7 +79,7 @@ export const APP_HERO_URL: string = `${APP_URL}/hero.png`;
  * Background color for the splash screen.
  * Used as fallback when splash image is loading.
  */
-export const APP_SPLASH_BACKGROUND_COLOR: string = '#f7f7f7';
+export const APP_SPLASH_BACKGROUND_COLOR: string = '#000000';
 
 /**
  * Account association for the mini app.
