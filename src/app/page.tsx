@@ -1,7 +1,7 @@
 // src/app/page.tsx
 // This is a Server Component to fetch the public feed data efficiently.
 
-import { kv } from '@vercel/kv';
+import { kv } from '~/lib/kv-adapter';
 import { VideoJob, JobStatus } from '~/lib/db';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -65,20 +65,16 @@ export default async function FeedPage() {
 
   try {
     // 1. Fetch all job keys
-    const jobKeys = await kv.keys(DB_PREFIX + '*');
-    
-    // 2. Fetch all job data
-    const allJobs = await kv.mget<VideoJob[]>(jobKeys);
+  const jobKeys = await kv.keys(DB_PREFIX + '*');
+
+  // 2. Fetch all job data
+  const allJobs = (await kv.mget<VideoJob>(...jobKeys)) as (VideoJob | null)[];
 
     // 3. Filter for public/shared videos and sort
-    publicFeed = (allJobs as VideoJob[])
-      .filter(job => 
-        job && 
-        job.status !== 'PENDING' && 
-        (job.final_farcaster_cdn_url || job.vercel_blob_url) // Must have an accessible video URL
-      )
+    publicFeed = allJobs
+      .filter((job): job is VideoJob => !!job && job.status !== 'PENDING' && (!!job.final_farcaster_cdn_url || !!job.vercel_blob_url))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, MAX_FEED_ITEMS);
+      .slice(0, MAX_FEED_ITEMS) as VideoJob[];
 
   } catch (e: any) {
     console.error("Failed to load public feed:", e);

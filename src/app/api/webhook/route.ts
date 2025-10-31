@@ -1,7 +1,7 @@
 // src/app/api/webhook/route.ts - COMPLETE CORRECTED CODE
 
 import { NextRequest, NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
+import { kv } from '~/lib/kv-adapter';
 import { JobStatus, VideoJob } from '~/lib/db';
 // FIX: Import the entire SDK as a namespace to resolve missing exports
 import * as NeynarSdk from '@neynar/nodejs-sdk'; 

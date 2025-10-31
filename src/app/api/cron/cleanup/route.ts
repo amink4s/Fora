@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { JobStatus, VideoJob } from '~/lib/db';
-import { kv } from '@vercel/kv';
+import { kv } from '~/lib/kv-adapter';
 import { deleteBlob } from '~/lib/vercel-blob';
 
 // --- CONSTANTS & CONFIGURATION ---

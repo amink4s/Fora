@@ -1,6 +1,6 @@
 // src/lib/generation-worker.ts - COMPLETE CORRECTED CODE
 
-import { kv } from '@vercel/kv';
+import { kv } from '~/lib/kv-adapter';
 // FIX: Use the working ~ alias for internal paths
 import { uploadBlob, deleteBlob } from '~/lib/vercel-blob';
 import { VideoJob, JobStatus } from '~/lib/db';
@@ -21,9 +21,9 @@ export function startGenerationWorker() {
 
 async function processPendingJobs() {
     const jobKeys = await kv.keys(DB_PREFIX + '*');
-    
-    const pendingJobs = (await kv.mget<VideoJob[]>(jobKeys))
-        .filter(job => job && job.status === 'PENDING');
+
+    const allJobs = (await kv.mget<VideoJob>(...jobKeys)) as (VideoJob | null)[];
+    const pendingJobs = allJobs.filter((job): job is VideoJob => !!job && job.status === 'PENDING');
 
     if (pendingJobs.length === 0) {
         return;

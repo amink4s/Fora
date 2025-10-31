@@ -1,7 +1,7 @@
 // src/app/api/generate/route.ts - COMPLETE CORRECTED CODE
 
 import { NextRequest, NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
+import { kv } from '~/lib/kv-adapter';
 import { VideoJob, JobStatus } from '~/lib/db'; 
 import { startGenerationWorker } from '~/lib/generation-worker'; 
 // FIX: Removed the non-existent MiniAppSDK import.

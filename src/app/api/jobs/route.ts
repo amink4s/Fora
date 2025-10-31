@@ -1,7 +1,7 @@
 // src/app/api/jobs/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
+import { kv } from '~/lib/kv-adapter';
 import { VideoJob } from '~/lib/db';
 
 const DB_PREFIX = 'job:';
@@ -24,11 +24,11 @@ export async function GET(req: NextRequest) {
     const jobKeys = await kv.keys(DB_PREFIX + '*');
 
     // 2. Fetch all job data in bulk
-    const allJobs = await kv.mget<VideoJob[]>(jobKeys);
+    const allJobs = (await kv.mget<VideoJob>(...jobKeys)) as (VideoJob | null)[];
 
     // 3. Filter jobs by the authenticated user's FID and sort by creation time
     const userJobs = allJobs
-      .filter(job => job && job.user_fid === userFid)
+      .filter((job): job is VideoJob => !!job && job.user_fid === userFid)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()); // Reverse chronological
 
     // 4. Group jobs by status
