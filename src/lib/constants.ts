@@ -73,7 +73,7 @@ export const APP_SPLASH_URL: string = `${APP_URL}/splash.png`;
  * URL for the app's hero image (used in Farcaster manifest as heroImageUrl).
  * Point this to the file you added in /public (e.g., her.png or hero.png).
  */
-export const APP_HERO_URL: string = `${APP_URL}/her.png`;
+export const APP_HERO_URL: string = `${APP_URL}/hero.png`;
 
 /**
  * Background color for the splash screen.
