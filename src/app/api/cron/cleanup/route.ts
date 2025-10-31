@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { JobStatus, VideoJob } from '~/lib/db';
 import { kv } from '@vercel/kv';
-import { list, del } from '@vercel/blob';
+import { deleteBlob } from '~/lib/vercel-blob';
 
 // --- CONSTANTS & CONFIGURATION ---
 const DB_PREFIX = 'job:';
@@ -31,7 +31,15 @@ export async function GET(req: NextRequest) {
     // NOTE: In a real database, you would query only 'READY' and 'COMPLETED_PUBLIC' status jobs
     // Here we must fetch all keys from KV to simulate the query.
     const jobKeys = await kv.keys(DB_PREFIX + '*');
-    const jobs = await kv.mget<VideoJob[]>(jobKeys);
+
+    if (!jobKeys || jobKeys.length === 0) {
+      console.log('[CLEANUP] No job keys found; nothing to do.');
+      return NextResponse.json({ success: true, message: 'No jobs to clean.' });
+    }
+
+  // kv.mget expects individual keys as args, not an array wrapper
+  // Use a cast to satisfy TypeScript and get the array of VideoJob objects at runtime
+  const jobs = (await kv.mget(...(jobKeys as string[]))) as VideoJob[];
     
     // Calculate current simulated usage (we'll rely on the time-based trigger)
     // NOTE: Vercel Blob SDK (list) can provide actual usage metrics if needed,
@@ -54,29 +62,31 @@ export async function GET(req: NextRequest) {
     for (const job of jobsToDelete) {
         if (!job || !job.vercel_blob_url) continue;
 
-        try {
-            // 3. Delete the video file from Vercel Blob
-            // We only delete the file, the final Farcaster CDN URL remains in the DB.
-            await del(job.vercel_blob_url); 
-            console.log(`[CLEANUP] Successfully deleted Blob asset for Job: ${job.id}`);
-            deletedCount++;
+    try {
+      // 3. Delete the video file from Vercel Blob using project helper
+      // We only delete the temporary file; the final Farcaster CDN URL remains in the DB.
+      await deleteBlob(job.vercel_blob_url);
+      console.log(`[CLEANUP] Successfully deleted Blob asset for Job: ${job.id}`);
+      deletedCount++;
 
-            // 4. Update the DB status to Archived
-            await kv.set(DB_PREFIX + job.id, {
-                ...job,
-                status: 'ARCHIVED' as JobStatus,
-                vercel_blob_url: null, // Ensure the temporary URL is removed
-            });
+      // 4. Update the DB status to Archived
+      await kv.set(DB_PREFIX + job.id, {
+        ...job,
+        status: 'ARCHIVED' as JobStatus,
+        vercel_blob_url: null, // Ensure the temporary URL is removed
+      });
 
-        } catch (blobError) {
-            console.warn(`[CLEANUP WARNING] Failed to delete Blob for Job ${job.id}. It might have already been deleted or URL is invalid.`, blobError);
-            // Even if deletion fails, update status to prevent immediate re-attempt
-            await kv.set(DB_PREFIX + job.id, {
-                ...job,
-                status: 'ARCHIVED' as JobStatus,
-                vercel_blob_url: null,
-            });
-        }
+    } catch (blobError) {
+      console.warn(`[CLEANUP WARNING] Failed to delete Blob for Job ${job.id}.`, blobError);
+      // Include stack if available for easier debugging
+      if (blobError && (blobError as Error).stack) console.warn((blobError as Error).stack);
+      // Even if deletion fails, update status to prevent immediate re-attempt
+      await kv.set(DB_PREFIX + job.id, {
+        ...job,
+        status: 'ARCHIVED' as JobStatus,
+        vercel_blob_url: null,
+      });
+    }
     }
     
     console.log(`--- CRON JOB: Cleanup Finished. ${deletedCount} assets archived. ---`);
