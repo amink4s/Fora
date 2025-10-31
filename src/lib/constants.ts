@@ -16,7 +16,15 @@ import { type AccountAssociation } from '@farcaster/miniapp-core/src/manifest';
  * The base URL of the application.
  * Used for generating absolute URLs for assets and API endpoints.
  */
-export const APP_URL: string = process.env.NEXT_PUBLIC_URL!;
+// Use NEXT_PUBLIC_URL when provided; otherwise default to the deployed site URL.
+// Ensure we always produce an https URL without a trailing slash.
+const rawEnvUrl = process.env.NEXT_PUBLIC_URL || '';
+// If NEXT_PUBLIC_URL points to localhost (e.g., from .env.local), ignore it and use the deployed URL.
+const _rawAppUrl = /localhost|127\.0\.0\.1/.test(rawEnvUrl)
+  ? 'https://fora-69.vercel.app'
+  : rawEnvUrl || 'https://fora-69.vercel.app';
+
+export const APP_URL: string = _rawAppUrl.replace(/\/$/, '').replace(/^http:/, 'https:');
 
 /**
  * The name of the mini app as displayed to users.
