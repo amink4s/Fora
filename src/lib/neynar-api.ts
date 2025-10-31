@@ -1,6 +1,7 @@
 // src/lib/neynar-api.ts - COMPLETE CORRECTED CODE
 
 import { NeynarAPIClient, Configuration } from '@neynar/nodejs-sdk';
+import { APP_URL } from './constants';
 
 // FIX: Initialize the client using the Configuration object to resolve 
 // "Argument of type 'string' is not assignable to type 'Configuration'" error.
@@ -38,34 +39,39 @@ export async function sendVideoReadyNotification(
     const shortTitle = jobTitle.substring(0, 32);
     const shortBody = jobBody.substring(0, 128);
 
-    const attempts = [
-      { target_fids: [fid], notification: { title: shortTitle, body: shortBody, target_url: jobDeepLink } },
-      { targetFids: [fid], notification: { title: shortTitle, body: shortBody, target_url: jobDeepLink } },
-      { targetFids: [fid], notification: { title: shortTitle, body: shortBody, deep_link: jobDeepLink } },
-      { fids: [fid], notification: { title: shortTitle, body: shortBody, target_url: jobDeepLink } },
-    ];
-
-    let lastError: any = null;
-    for (const payload of attempts) {
-      try {
-        await (neynarClient as any).publishFrameNotifications(payload);
-        console.log(`Notification sent successfully to FID ${fid} using payload keys: ${Object.keys(payload).join(',')}`);
-        return;
-      } catch (err: any) {
-        lastError = err;
-        // If Axios-like error, log server response body for diagnosis
-        if (err?.response?.data) {
-          console.warn('Neynar API response:', JSON.stringify(err.response.data));
-        } else {
-          console.warn('Neynar SDK error (no response body):', err?.message || err);
-        }
-        // If 400, continue to next payload attempt; otherwise break and surface the error
-        if (err?.status && err.status !== 400) break;
-      }
+    // Ensure the deep link is a fully-qualified URL as required by Neynar
+    let targetUrl = jobDeepLink;
+    try {
+      // If it's already a valid absolute URL, keep it; otherwise prefix with APP_URL
+      const parsed = new URL(jobDeepLink);
+      targetUrl = parsed.toString();
+    } catch (_) {
+      // jobDeepLink is relative; normalize it against APP_URL
+      const prefix = APP_URL.replace(/\/$/, '');
+      const suffix = jobDeepLink.startsWith('/') ? jobDeepLink : `/${jobDeepLink}`;
+      targetUrl = `${prefix}${suffix}`;
     }
 
-    console.error(`Failed to send notification to FID ${fid} after ${attempts.length} attempts.`,
-      lastError?.response?.data || lastError?.message || lastError);
+    const payload = {
+      target_fids: [fid],
+      notification: {
+        title: shortTitle,
+        body: shortBody,
+        target_url: targetUrl,
+      },
+    };
+
+    try {
+      await (neynarClient as any).publishFrameNotifications(payload);
+      console.log(`Notification sent successfully to FID ${fid}.`);
+      return;
+    } catch (err: any) {
+      if (err?.response?.data) {
+        console.warn('Neynar API response:', JSON.stringify(err.response.data));
+      }
+      console.error(`Failed to send notification to FID ${fid} with payload:`, payload, err?.response?.data || err?.message || err);
+      return;
+    }
   } catch (error) {
     console.error(`Failed to send notification to FID ${fid}:`, error);
   }
