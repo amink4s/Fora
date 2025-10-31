@@ -26,9 +26,13 @@ export function Header({ neynarUser }: HeaderProps) {
       >
         <div className="text-lg font-light">Welcome to {APP_NAME}!</div>
 
-        {/* Avatar slot: show user pfp when available, otherwise show placeholder.
-            When not authenticated show a small Connect button next to the avatar. */}
-        <div className="flex items-center space-x-3">
+        {/* keep header content minimal; avatar is shown fixed at top-right separately */}
+        <div />
+      </div>
+
+      {/* Fixed avatar in top-right so it's always visible on feed/home */}
+      <div className="fixed top-4 right-4 z-60">
+        <div className="flex items-center space-x-2">
           <div
             className="cursor-pointer flex items-center"
             onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
@@ -44,10 +48,11 @@ export function Header({ neynarUser }: HeaderProps) {
                 context?.user?.pfpUrl ?? user?.pfpUrl ?? '/placeholder.png'
               }
               alt="Profile"
-              className="w-10 h-10 rounded-full border-2 border-primary object-cover bg-gray-200"
+              className="w-12 h-12 rounded-full border-2 border-primary object-cover bg-gray-200"
             />
           </div>
 
+          {/* If not connected, show a small connect button next to/under the avatar */}
           {!context?.user && (
             <button
               onClick={async () => {
@@ -57,7 +62,7 @@ export function Header({ neynarUser }: HeaderProps) {
                   console.warn('QuickAuth signIn failed', e);
                 }
               }}
-              className="px-3 py-1 rounded bg-indigo-600 text-white text-sm"
+              className="px-2 py-1 rounded bg-indigo-600 text-white text-xs"
               disabled={status === 'authenticated'}
             >
               {status === 'authenticated' ? 'Connected' : 'Connect'}
