@@ -10,6 +10,7 @@ import {
   APP_PRIMARY_CATEGORY,
   APP_SPLASH_BACKGROUND_COLOR,
   APP_SPLASH_URL,
+  APP_HERO_URL,
   APP_TAGS,
   APP_URL,
   APP_WEBHOOK_URL,
@@ -45,7 +46,9 @@ export function getMiniAppEmbedMetadata(ogImageUrl?: string) {
 }
 
 export async function getFarcasterDomainManifest(): Promise<Manifest> {
-  return {
+  // Use `any` for the miniapp object to allow adding non-standard properties like
+  // `heroImageUrl` which may not exist on the TypeScript Manifest type used here.
+  const manifest: any = {
     accountAssociation: APP_ACCOUNT_ASSOCIATION!,
     miniapp: {
       version: '1',
@@ -53,10 +56,13 @@ export async function getFarcasterDomainManifest(): Promise<Manifest> {
       homeUrl: APP_URL,
       iconUrl: APP_ICON_URL,
       imageUrl: APP_OG_IMAGE_URL,
+      heroImageUrl: APP_HERO_URL,
       buttonTitle: APP_BUTTON_TEXT ?? 'Launch Mini App',
       splashImageUrl: APP_SPLASH_URL,
       splashBackgroundColor: APP_SPLASH_BACKGROUND_COLOR,
       webhookUrl: APP_WEBHOOK_URL,
     },
   };
+
+  return manifest as Manifest;
 }
