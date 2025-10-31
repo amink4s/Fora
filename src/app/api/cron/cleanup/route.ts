@@ -61,11 +61,24 @@ export async function GET(req: NextRequest) {
 
     for (const job of jobsToDelete) {
         if (!job || !job.vercel_blob_url) continue;
+        // Defensive check: ensure vercel_blob_url is a non-empty string and looks like a URL
+        if (typeof job.vercel_blob_url !== 'string' || !job.vercel_blob_url.trim()) {
+          console.warn(`[CLEANUP] Skipping job ${job?.id} because vercel_blob_url is empty or invalid:`, job?.vercel_blob_url);
+          // Mark archived to avoid repeated attempts
+          await kv.set(DB_PREFIX + job.id, { ...job, status: 'ARCHIVED' as JobStatus, vercel_blob_url: null });
+          continue;
+        }
+        const blobUrlTrimmed = job.vercel_blob_url.trim();
+        if (!/^https?:\/\//i.test(blobUrlTrimmed)) {
+          console.warn(`[CLEANUP] Skipping job ${job.id} because vercel_blob_url does not look like an HTTP URL:`, blobUrlTrimmed);
+          await kv.set(DB_PREFIX + job.id, { ...job, status: 'ARCHIVED' as JobStatus, vercel_blob_url: null });
+          continue;
+        }
 
     try {
       // 3. Delete the video file from Vercel Blob using project helper
       // We only delete the temporary file; the final Farcaster CDN URL remains in the DB.
-      await deleteBlob(job.vercel_blob_url);
+  await deleteBlob(blobUrlTrimmed);
       console.log(`[CLEANUP] Successfully deleted Blob asset for Job: ${job.id}`);
       deletedCount++;
 
