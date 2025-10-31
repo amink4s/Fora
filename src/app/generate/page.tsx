@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { useMiniApp } from '@neynar/react';
 import { useRouter } from 'next/navigation';
+import sdk from '@farcaster/miniapp-sdk';
 
 export default function GeneratePage() {
   const router = useRouter();
@@ -87,10 +88,30 @@ export default function GeneratePage() {
       <h1 className="text-xl font-bold mb-4">🎨 Generate My PFP Animation</h1>
       
       {fid ? (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <p className="text-sm text-gray-500">
-            Current User FID: **{fid}**
-          </p>
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={async () => {
+                  // Try to navigate back in-app; fall back to Next router push to '/'
+                  try {
+                    router.back();
+                  } catch (e) {
+                    try {
+                      await router.push('/');
+                    } catch (err) {
+                      // ignore
+                    }
+                  }
+                }}
+              className="px-3 py-1 rounded bg-gray-200 text-sm"
+            >
+              ← Back to feed
+            </button>
+            {/* top-right space is intentionally left for the Header avatar */}
+            <div />
+          </div>
+
+  <form onSubmit={handleSubmit} className="space-y-4">
 
           <div>
             <label htmlFor="prompt" className="block text-sm font-medium text-gray-700">
@@ -141,6 +162,7 @@ export default function GeneratePage() {
             Estimated wait time: 1-5 minutes. You will receive a notification when ready.
           </p>
         </form>
+  </div>
       ) : (
         <div className="text-center p-8 border border-dashed rounded-lg">
           <p className="text-lg font-medium">Please connect your Farcaster account to begin generating.</p>

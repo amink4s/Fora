@@ -60,7 +60,9 @@ export default function App(
     setInitialTab,
     setActiveTab,
     currentTab,
-  } = useMiniApp();
+    composeCast,
+    user,
+  } = useMiniApp() as any;
 
   // --- Neynar user hook ---
   const { user: neynarUser } = useNeynarUser(context || undefined);
@@ -117,7 +119,7 @@ export default function App(
         paddingRight: context?.client.safeAreaInsets?.right ?? 0,
       }}
     >
-      {/* Header should be full width */}
+  {/* Header should be full width */}
       <Header neynarUser={neynarUser} />
 
       {/* Main content and footer should be centered */}
@@ -134,6 +136,26 @@ export default function App(
         {/* Footer with navigation */}
         <Footer activeTab={currentTab as Tab} setActiveTab={setActiveTab} showWallet={USE_WALLET} />
       </div>
+        {/* Floating compose (+) button at bottom-right */}
+        {isSDKLoaded && currentTab === Tab.Home && (
+          <div className="fixed bottom-6 right-4 z-50">
+            <button
+              aria-label="Compose"
+              onClick={async () => {
+                try {
+                  if (composeCast) {
+                    await composeCast({ text: '' });
+                  }
+                } catch (err) {
+                  console.warn('Compose action failed', err);
+                }
+              }}
+              className="w-14 h-14 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg hover:bg-indigo-700"
+            >
+              <span className="text-2xl">+</span>
+            </button>
+          </div>
+        )}
     </div>
   );
 }
