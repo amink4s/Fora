@@ -2,8 +2,10 @@
 // Simple adapter to replace @vercel/kv with Upstash Redis client.
 import { Redis } from '@upstash/redis';
 
-const url = process.env.UPSTASH_REST_URL;
-const token = process.env.UPSTASH_REST_TOKEN;
+// Support both the older and newer Upstash env var names. Some Upstash dashboards
+// provide names like UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN.
+const url = process.env.UPSTASH_REST_URL || process.env.UPSTASH_REDIS_REST_URL;
+const token = process.env.UPSTASH_REST_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
 if (!url || !token) {
   // Allow app to start locally without Upstash; runtime calls will throw with helpful message.
