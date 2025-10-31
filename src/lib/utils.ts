@@ -46,22 +46,27 @@ export function getMiniAppEmbedMetadata(ogImageUrl?: string) {
 }
 
 export async function getFarcasterDomainManifest(): Promise<Manifest> {
-  // Use `any` for the miniapp object to allow adding non-standard properties like
-  // `heroImageUrl` which may not exist on the TypeScript Manifest type used here.
+  // Ensure manifest URLs point to the deployed production host. If APP_URL still
+  // references localhost (e.g., present in build env), override to the known
+  // production domain so the Farcaster manifest is correct for verification.
+  const baseHost = /localhost|127\.0\.0\.1/.test(APP_URL) ? 'https://fora-69.vercel.app' : APP_URL;
+
+  const miniapp: any = {
+    version: '1',
+    name: APP_NAME ?? 'Neynar Starter Kit',
+    homeUrl: `${baseHost}`,
+    iconUrl: `${baseHost}/icon.png`,
+    imageUrl: `${baseHost}/api/opengraph-image`,
+    heroImageUrl: `${baseHost}/her.png`,
+    buttonTitle: APP_BUTTON_TEXT ?? 'Launch Mini App',
+    splashImageUrl: `${baseHost}/splash.png`,
+    splashBackgroundColor: APP_SPLASH_BACKGROUND_COLOR,
+    webhookUrl: APP_WEBHOOK_URL,
+  };
+
   const manifest: any = {
     accountAssociation: APP_ACCOUNT_ASSOCIATION!,
-    miniapp: {
-      version: '1',
-      name: APP_NAME ?? 'Neynar Starter Kit',
-      homeUrl: APP_URL,
-      iconUrl: APP_ICON_URL,
-      imageUrl: APP_OG_IMAGE_URL,
-      heroImageUrl: APP_HERO_URL,
-      buttonTitle: APP_BUTTON_TEXT ?? 'Launch Mini App',
-      splashImageUrl: APP_SPLASH_URL,
-      splashBackgroundColor: APP_SPLASH_BACKGROUND_COLOR,
-      webhookUrl: APP_WEBHOOK_URL,
-    },
+    miniapp,
   };
 
   return manifest as Manifest;
