@@ -32,18 +32,40 @@ export async function sendVideoReadyNotification(
   }
   
   try {
-    // The SDK exposes a "publishFrameNotifications" / frame notifications path.
-    // Use a weakly-typed call to avoid depending on exact types in the SDK wrapper.
-    await (neynarClient as any).publishFrameNotifications({
-      target_fids: [fid],
-      notification: {
-        title: jobTitle.substring(0, 32),
-        body: jobBody.substring(0, 128),
-        target_url: jobDeepLink,
-      },
-    });
+    // Try a couple of payload shapes the Neynar SDK/API may accept. The SDK
+    // surface can vary; if the first attempt returns 400 we'll log the
+    // response and retry with alternate key naming.
+    const shortTitle = jobTitle.substring(0, 32);
+    const shortBody = jobBody.substring(0, 128);
 
-    console.log(`Notification sent successfully to FID ${fid}.`);
+    const attempts = [
+      { target_fids: [fid], notification: { title: shortTitle, body: shortBody, target_url: jobDeepLink } },
+      { targetFids: [fid], notification: { title: shortTitle, body: shortBody, target_url: jobDeepLink } },
+      { targetFids: [fid], notification: { title: shortTitle, body: shortBody, deep_link: jobDeepLink } },
+      { fids: [fid], notification: { title: shortTitle, body: shortBody, target_url: jobDeepLink } },
+    ];
+
+    let lastError: any = null;
+    for (const payload of attempts) {
+      try {
+        await (neynarClient as any).publishFrameNotifications(payload);
+        console.log(`Notification sent successfully to FID ${fid} using payload keys: ${Object.keys(payload).join(',')}`);
+        return;
+      } catch (err: any) {
+        lastError = err;
+        // If Axios-like error, log server response body for diagnosis
+        if (err?.response?.data) {
+          console.warn('Neynar API response:', JSON.stringify(err.response.data));
+        } else {
+          console.warn('Neynar SDK error (no response body):', err?.message || err);
+        }
+        // If 400, continue to next payload attempt; otherwise break and surface the error
+        if (err?.status && err.status !== 400) break;
+      }
+    }
+
+    console.error(`Failed to send notification to FID ${fid} after ${attempts.length} attempts.`,
+      lastError?.response?.data || lastError?.message || lastError);
   } catch (error) {
     console.error(`Failed to send notification to FID ${fid}:`, error);
   }
